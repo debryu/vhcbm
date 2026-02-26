@@ -1,0 +1,14 @@
+argus/results
+argus/wandb
+argus/figs
+argus/data/activations
+argus/data/send
+argus/annotated_datasets
+*.zip
+*.pyc
+*.out
+*.err
+__pycache__/
+__pycache__
+*.py[cod]
+*$py.class

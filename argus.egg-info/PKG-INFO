@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: argus
+Version: 0.1
+Author: itsme
+Author-email: itsme@myaffiliation
+Requires-Dist: loguru
+Requires-Dist: matplotlib
+Requires-Dist: wandb
+Requires-Dist: seaborn
+Requires-Dist: gpytorch
+Requires-Dist: CQA@ git+http://github.com/debryu/CQA.git

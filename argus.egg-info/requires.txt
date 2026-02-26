@@ -1,0 +1,6 @@
+loguru
+matplotlib
+wandb
+seaborn
+gpytorch
+CQA@ git+http://github.com/debryu/CQA.git
