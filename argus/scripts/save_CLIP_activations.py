@@ -5,7 +5,7 @@ import torch
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
 CLIP_NAME = 'ViT-L/14'
-ACTIVATIONS_DIR = "./activations"
+ACTIVATIONS_DIR = "/home/nicola.debole/projects/Caching/activations"
 CLIP_NAME_SANITIZED = CLIP_NAME.replace('/','%')
 AUGMENTATION = 'noise'
 BATCH_SIZE = 1000

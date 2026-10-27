@@ -14,9 +14,9 @@ from loguru import logger
 import numpy as np
 
 device = 'cuda'
-ACTIVATIONS_FOLDER = './activations'
+ACTIVATIONS_FOLDER = '/leonardo_scratch/fast/IscrC_ARGO/activations'
 
-MODEL_NAME = 'ViT-L/14' #['ViT-L/14', 'dinov3']
+MODEL_NAME = 'dinov3' # ['ViT-L/14', 'dinov3']
 MODEL_NAME_SANITIZED = MODEL_NAME.replace('/','%')
 
 try:
@@ -35,7 +35,7 @@ from argus.utils.save_activations import save_activations
 
 # Load your dataset here
 split = ['val','test','train']
-ds_name = ['shapes3d','cub','dermamnist','celeba']
+ds_name = ['cub']
 for ds in ds_name:
     for s in split:
         dataset = GenericDataset(ds, split = s, transform=standard_preprocess)

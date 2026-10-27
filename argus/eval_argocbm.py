@@ -49,14 +49,22 @@ def save_IM_as_img(save_path,name,title,importance_matrix,save_plot=True):
 def heatmap(matrix, plot_title, save_path=None):
     import matplotlib.pyplot as plt
     import seaborn as sns
-    
+    #try:
+    #  GROUND_TRUTH_CONCEPTS[dataset_name]
+    #except:
+    #  logger.error("Please add ground truth concepts for the dataset in utils/dci_utils.py")
+    #  raise ValueError(f"Dataset {dataset_name} not found in GROUND_TRUTH_CONCEPTS")
+    #with open(CONCEPT_SETS[dataset_name]) as f:
+    #    concepts = f.read().split("\n")
+    #y_labels = [c for c in concepts]
     plt.figure(figsize=matrix.shape)
     ax = sns.heatmap(matrix, annot=False, 
                 fmt=".2f", 
                 cmap="hot", 
                 linewidths=0.5, 
                 square=True, 
-                
+                #xticklabels=GROUND_TRUTH_CONCEPTS[dataset_name],
+                #yticklabels=y_labels,
                 cbar=True)
   
     plt.xticks(rotation=50, ha='right', va='top', )
@@ -69,8 +77,11 @@ def heatmap(matrix, plot_title, save_path=None):
         plt.show()
 
 def DCI(reprs, binary = False, train_test_ratio=0.7,max_samples:int = None, level = 'INFO'):
+    # Split the data in train-test
     n = len(reprs['concept_means'])
     indices = torch.randperm(n)
+    
+    # 2. Split indices into train and test sets
     train_size = int(n * train_test_ratio)
     train_idx = indices[:train_size]
     val_idx = indices[train_size:]
@@ -180,16 +191,24 @@ if __name__ == "__main__":
     
     for i in range(test['concept_gts'].shape[1]):
         cr_concepts= classification_report(test['concept_gts'][:,i].numpy(), test['concept_preds'][:,i].numpy(), output_dict=True)
+        #cr_concepts= classification_report(test['concept_gts'][:,i].numpy(), test['concept_means'][:,i].numpy(), output_dict=True)
+        #mask = test['concept_preds'][:,i].long() + 2*i
         f1_raw.append(cr_concepts['macro avg']['f1-score']) #type:ignore
         acc_raw.append(cr_concepts['accuracy'])  # type:ignore
         rec_raw.append(cr_concepts['macro avg']['recall'])   # type:ignore
         prec_raw.append(cr_concepts['macro avg']['precision'])   # type:ignore
+        #print(concept_gt[i], test['concept_means'][i].numpy())
         if binary:
-            roc = RocAUC(test['concept_gts'][:,i].numpy(), test['concept_means'][:,2*i+1].numpy()) 
+            roc = RocAUC(test['concept_gts'][:,i].numpy(), test['concept_means'][:,2*i+1].numpy())   # was concept_logits[i]
             pr = MacroAUC(test['concept_gts'][:,i].numpy(), test['concept_means'][:,2*i+1].numpy())
         else:
-            roc = RocAUC(test['concept_gts'][:,i].numpy(), test['concept_means'][:,i].numpy())   
+            roc = RocAUC(test['concept_gts'][:,i].numpy(), test['concept_means'][:,i].numpy())   # was concept_logits[i]
             pr = MacroAUC(test['concept_gts'][:,i].numpy(), test['concept_means'][:,i].numpy())
+        #import pdb; pdb.set_trace()
+        #roc = RocAUC(test['concept_gts'][:,i].numpy(), test['concept_preds'][:,i].numpy())   # was concept_logits[i]
+        #pr = MacroAUC(test['concept_gts'][:,i].numpy(), test['concept_preds'][:,i].numpy())
+        #roc = RocAUC(test['concept_gts'][:,i].numpy(), test['concept_probs'][:,i].numpy())   # was concept_logits[i]
+        #pr = MacroAUC(test['concept_gts'][:,i].numpy(), test['concept_probs'][:,i].numpy())
         pr_aucs.append(pr.prauc0)
         roc_aucs.append(roc.roc_auc)
         
@@ -209,9 +228,13 @@ if __name__ == "__main__":
             'all_pr_aucs': pr_aucs,
             'label_f1': cr_labels['macro avg']['f1-score']  #type:ignore
             }
-    
+
+    print(res)
     dci_dict = DCI(test, binary = binary)
+    print(dci_dict)
     res.update(dci_dict)
+    print(res)
+    np.save(f"{args.load_dir}/im.npy", dci_dict['importance_matrix'])
     save_IM_as_img(save_path = args.load_dir, 
                    name="dci.png", 
                    title="dci matrix", 

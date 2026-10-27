@@ -1,7 +1,7 @@
 import os
 import json
 import pandas as pd
-FAST_STORAGE = os.environ.get("FAST", "/mnt/external_storage")
+FAST_STORAGE = os.environ.get("FAST", "/home/nicola.debole/projects/Argus/argus")
 
 cmb_path = os.path.join(FAST_STORAGE, "results/CBMAT")
 

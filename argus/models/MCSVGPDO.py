@@ -399,7 +399,11 @@ class MCSVGP(BaseModel):
             if self.kernel == 'RBF':
                 model.covar_module.base_kernel.initialize(lengthscale=self.lengthscale) # type:ignore
                 model.covar_module.initialize(outputscale=self.outputscale)
-            # Set likelihood 
+                if not self.learnlengthscale:
+                    model.covar_module.base_kernel.raw_lengthscale.requires_grad = False     # type:ignore
+                if not self.learnoutputscale:
+                    model.covar_module.raw_outputscale.requires_grad = False     # type:ignore
+            # Set likelihood
             likelihood = gpytorch.likelihoods.SoftmaxLikelihood(num_classes=num_classes, mixing_weights=False)
             likelihood = likelihood.to(self.device)
             likelihood.noise = self.inputnoise
@@ -541,8 +545,26 @@ class MCSVGP(BaseModel):
             #mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
             
             
+            # Kernel hyperparameters that must stay fixed are excluded from the optimizer, not just
+            # flagged with requires_grad=False: gpytorch re-enables requires_grad on
+            # raw_lengthscale/raw_outputscale during the forward pass, so the flag set in
+            # __init__/reset_models does NOT survive and Adam would train them anyway (this silently
+            # invalidated the LEARN_KERNEL=0 arm of the sensitivity sweep). Excluding them from the
+            # param groups is what actually pins them.
+            frozen_ids = set()
+            if self.kernel == 'RBF':
+                if not self.learnlengthscale:
+                    frozen_ids.add(id(model.covar_module.base_kernel.raw_lengthscale))  # type:ignore
+                if not self.learnoutputscale:
+                    frozen_ids.add(id(model.covar_module.raw_outputscale))              # type:ignore
+            model_params = [p for p in model.parameters() if id(p) not in frozen_ids]
+            if frozen_ids:
+                logger.warning(f"Kernel freeze: excluding {len(frozen_ids)} kernel hyperparameter "
+                               f"tensor(s) from the optimizer "
+                               f"(learnlengthscale={self.learnlengthscale}, "
+                               f"learnoutputscale={self.learnoutputscale})")
             optimizer = torch.optim.Adam([
-                {'params': model.parameters()},
+                {'params': model_params},
                 {'params': likelihood.parameters()}
             ], lr=self.lr)
             scheduler = ReduceLROnPlateau(optimizer, patience=80, factor=0.8)
@@ -906,6 +928,34 @@ class MCSVGP(BaseModel):
             
         return torch.stack(scores, dim=1)
     
+    def compute_uncertainties(self,alphas):
+        """
+        alphas: Tensor [N, K]
+        """
+        S = alphas.sum(dim=-1, keepdim=True) # Total Evidence
+        probs = alphas / S                   # Expected Probabilities (Mean)
+        
+        # 1. Total Uncertainty (Predictive Entropy)
+        # Adding 1e-10 to avoid log(0)
+        total_entropy = -torch.sum(probs * torch.log(probs + 1e-10), dim=-1)
+        
+        # 2. Aleatoric Uncertainty (Expected Entropy)
+        # Uses the Digamma function: torch.digamma
+        aleatoric = torch.sum(
+            (alphas / S) * (torch.digamma(S + 1) - torch.digamma(alphas + 1)), 
+            dim=-1
+        )
+        
+        # 3. Epistemic Uncertainty (Mutual Information)
+        epistemic = total_entropy - aleatoric
+        
+        return {
+            "probs": probs,
+            "total_uncertainty": total_entropy,
+            "aleatoric": aleatoric,
+            "epistemic": epistemic,
+            "evidence": S.squeeze(-1)
+        }
     
     def mean(self, dataset) -> torch.Tensor:
         '''
@@ -949,12 +999,93 @@ class MCSVGP(BaseModel):
         pred_probs = torch.stack(pred_probs,dim=1)
         return pred_probs
     
+    def predictive_entropy(self, dataset):
+        with torch.no_grad(), gpytorch.settings.num_likelihood_samples(32):
+            # This gives you the mean probability for each class after Softmax
+            # Shape: [N, num_classes]
+            probs = self.mean(dataset) 
+            
+            # Entropy = -sum(p * log(p))
+            entropy = -torch.sum(probs * torch.log(probs + 1e-8), dim=-1)
+            return entropy
+    
+    def uncertainty_volume_per_point(self, model, dataset, batch_size=8):
+        model.eval()
+        all_log_dets = []
+        
+        # We use a DataLoader to feed small chunks to the GPU
+        loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
+        
+        with torch.no_grad():
+            for x_batch in loader:
+                # Move only this small batch to GPU
+                x_batch = x_batch.to(next(model.parameters()).device)
+                
+                # Predict only for this batch
+                dist = model(x_batch)
+                
+                # 1. Get the independent task blocks [batch_size, T, T]
+                # 2. Use .evaluate() instead of .covariance_matrix for safer memory handling
+                # 3. .evaluate() on a small batch is much safer
+                batch_covars = dist.to_data_independent_dist().lazy_covariance_matrix.to_dense()
+                
+                # Compute log-det on the GPU for speed
+                _, log_dets = torch.linalg.slogdet(batch_covars)
+                
+                # Move result to CPU immediately to free GPU memory
+                all_log_dets.append(log_dets.cpu())
+                
+                # Manually clear the batch from cache if memory is very tight
+                del dist, batch_covars
+            
+        return torch.cat(all_log_dets)
+    
     def shannon_entropy(self, probs):
         unc = []
         for i in range(probs.shape[1]):
             unc.append(probs[:,i]*(1-probs[:,i]))
         unc = torch.stack(unc, dim=1)
         return unc
+
+    def get_latent_stats(self, model, dataset, batch_size=32):
+        all_latent_means = []
+        all_latent_vars = []
+        
+        loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
+        
+        with torch.no_grad():
+            for x_batch in loader:
+                x_batch = x_batch.to(next(model.parameters()).device)
+                
+                # Access the underlying latents (before LMC mixing)
+                strategy = model.variational_strategy.base_variational_strategy
+                latent_dist = strategy(x_batch) 
+                
+                # latent_dist.mean shape: [num_latents, batch_size]
+                # latent_dist.variance shape: [num_latents, batch_size]
+                all_latent_means.append(latent_dist.mean.cpu())
+                all_latent_vars.append(latent_dist.variance.cpu())
+                
+        return torch.cat(all_latent_means, dim=1), torch.cat(all_latent_vars, dim=1)
+
+    def get_predictive_stats(self, model, likelihood, dataset, batch_size=32):
+        all_latent_means = []
+        all_latent_vars = []
+        
+        loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
+        
+        with torch.no_grad():
+            for x_batch in loader:
+                x_batch = x_batch.to(next(model.parameters()).device)
+                
+                prediction = likelihood(model(x_batch))
+                
+                # latent_dist.mean shape: [num_latents, batch_size]
+                # latent_dist.variance shape: [num_latents, batch_size]
+                all_latent_means.append(prediction.mean.cpu())
+                all_latent_vars.append(prediction.variance.cpu())
+                
+        return torch.cat(all_latent_means, dim=1), torch.cat(all_latent_vars, dim=1)
     
     def get_mean_per_sample_per_class(self, model, latent_means):
         # 1. Get W: [5, 10] (latents x classes)
@@ -966,7 +1097,127 @@ class MCSVGP(BaseModel):
     
     import torch
 
+    def compute_alphas_location_step(self, mu, var, epsilon=1e-6):
+        """
+        Computes Dirichlet alpha parameters using both Location (mean) 
+        and Scale (variance) information.
+        
+        mu:  Tensor [N, K] - The latent means (logits)
+        var: Tensor [N, K] - The latent marginal variances (Sigma_ii)
+        """
+        # 1. Compute the 'Evidence' from the Mean-Involved logic.
+        # We use the Log-Normal expected value: exp(mu + 0.5 * var)
+        # This accounts for the fact that as variance increases, the 
+        # expected value of the exponentiated logit actually shifts.
+        evidence = torch.exp(mu + 0.5 * var)
+        
+        # 2. Compute the Precision factor (S) from the Variance-Only logic.
+        # We use the total variance to determine how 'sharp' the distribution is.
+        # A common and robust shortcut for S is the inverse of the average variance.
+        K = mu.size(-1)
+        precision = (1.0 / var).mean(dim=-1, keepdim=True)
+        
+        # 3. Combine: Scale the evidence by the precision factor
+        # This ensures that mu controls the 'which class' and var controls the 'how sure'
+        alphas = evidence * (precision / evidence.sum(dim=-1, keepdim=True))
+        
+        # 4. Numerical Stability
+        return torch.clamp(alphas, min=epsilon)
+    
+    def compute_dirichlet_alphas(self, var):
+        """
+        mu:  Tensor [N, K] - The latent means (logits)
+        var: Tensor [N, K] - The latent marginal variances (Sigma_ii)
+        """
+        N, K = var.shape
+        
+        # 1. Compute the sum of all class variances for each sample
+        # Shape: [N, 1]
+        sum_var = var.sum(dim=-1, keepdim=True)
+        
+        # 2. Compute the components of the linearization
+        # term1: 1 / Sigma_ii
+        inv_var = 1.0 / var
+        
+        # term2: (1 - 2/K)
+        constant_term = 1.0 - (2.0 / K)
+        
+        # term3: (sum_v / (K^2 * Sigma_ii))
+        scaling_term = sum_var / (K**2 * var)
+        
+        # 3. Combine to get alphas
+        alphas = inv_var * (constant_term + scaling_term)
+        
+        # 4. Numerical Stability
+        # Alphas must be positive. We clamp at a small epsilon, 
+        # though valid GP variances should naturally produce positive alphas.
+        return torch.clamp(alphas, min=1e-6)
+    
+    def get_var_per_sample_per_class(self, model, latent_vars):
+        """
+        latent_vars: [5, 30] -> (num_latents x num_samples)
+        Returns: [10, 30] -> (num_classes x num_samples)
+        """
+        # 1. Get W: [5, 10] (latents x classes)
+        W = model.variational_strategy.lmc_coefficients 
+        
+        # 2. Square the weights (Var calculation requirement)
+        W_squared = W**2 # [5, 10]
+        
+        # 3. Matrix Multiply to project latent variance into class variance
+        # [10, 5] @ [5, 30] -> [10, 30]
+        var_matrix = torch.matmul(W_squared.t().cpu(), latent_vars.cpu())
+        
+        return var_matrix
 
+    def get_class_stats(self, model, latent_means, latent_vars, class_idx = None):
+        """
+        latent_means: [5, 30] (latents x samples)
+        latent_vars:  [5, 30] (latents x samples)
+        """
+        # W is [5, 10] (latents x tasks)
+        W = model.variational_strategy.lmc_coefficients 
+        
+        # 1. Class Means: [10, 5] @ [5, 30] -> [10, 30]
+        # Each row is a class (10), each column is a sample (30)
+        class_means = torch.matmul(W.t().cpu(), latent_means.cpu())
+
+        # 2. Class Variances: (W^2).T @ LatentVars
+        # [10, 5] @ [5, 30] -> [10, 30]
+        class_vars = torch.matmul((W**2).t().cpu(), latent_vars.cpu())
+        if class_idx is not None:
+            return class_means[:,class_idx], class_vars[:,class_idx]
+
+        return class_means, class_vars
+
+    def total_variance_per_point(self, model, dataset):
+        with torch.no_grad():
+            dist = model(dataset)
+            # This returns the individual covariance block for each data point
+            # shape: [N, num_classes, num_classes]
+            all_task_covars = dist.to_data_independent_dist().covariance_matrix 
+            # Sum of variances across all classes for each point
+            total_variance = all_task_covars.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
+            return total_variance
+
+        
+    def sample_det(self, embeddings, K=100):
+        samples = embeddings[self.pool]
+        mean = self.mean(samples)
+        logits, vars = self.latent_variance(samples)
+        n_concepts = vars.shape[1]
+        training_indexes = []
+        for i in range(n_concepts):
+            c_variance = vars[:,i]
+            c_mean = mean[:,i]
+            # Compute UCB
+            score = c_mean + alpha*c_variance
+            logger.warning(f"Mean:{c_mean} - Variance:{c_variance}")
+            values, indexes = torch.topk(score, max(math.floor(K/n_concepts), 1), sorted=True, largest = True)
+            for k in indexes:
+                if k not in training_indexes:
+                    training_indexes.append(k)
+        return [self.pool[i] for i in training_indexes]
     
     def entropy(self, dataset) -> torch.Tensor:
         '''
@@ -1009,3 +1260,167 @@ class MCSVGP(BaseModel):
         #print('std',pred_vars)
         return pred_probs, pred_vars
     
+    def sample_boh(self, embeddings, K=100) -> list:
+        # Evaluate input points from the pool
+        search_space = embeddings[self.pool]
+        
+        # Select the indexes with highest entropy
+        uncs = self.unc_score(search_space)
+        print(uncs[0:3])
+        global_uncs = torch.sum(uncs, dim=1)
+        values, indexes = torch.topk(global_uncs, K, sorted=True, largest = True)
+        return [self.pool[i] for i in indexes]
+        
+        
+    def sample_shannon_entropy(self, embeddings, K = 100) -> list:
+        # Evaluate input points from the pool
+        search_space = embeddings[self.pool]
+        
+        # Select the indexes with highest entropy
+        uncs = self.unc_score(search_space)
+        x = uncs[:,0]
+        y = uncs[:,1]
+        # 1. Convert to NumPy (handling GPU and Gradients)
+        x_np = x.detach().cpu().numpy()
+        y_np = y.detach().cpu().numpy()
+
+        # 2. Create the plot
+        plt.figure(figsize=(8, 6))
+        plt.scatter(x_np, y_np, alpha=0.5, label='Uncertainty Points')
+
+        # 3. Add styling
+        plt.title('Visualization of Tensor Data')
+        plt.xlabel('UNC Column 0')
+        plt.ylabel('UNC Column 1')
+        plt.legend()
+        plt.grid(True)
+
+        # 4. Save the image
+        plt.savefig('/home/nicola.debole/projects/Argus/argus/figs/my_tensor_plot.png', dpi=300)
+
+        # Optional: Close the plot to free up memory
+        plt.close()
+        x = uncs[:,0]
+        y = uncs[:,10]
+        # 1. Convert to NumPy (handling GPU and Gradients)
+        x_np = x.detach().cpu().numpy()
+        y_np = y.detach().cpu().numpy()
+
+        # 2. Create the plot
+        plt.figure(figsize=(8, 6))
+        plt.scatter(x_np, y_np, alpha=0.5, label='Uncertainty Points')
+
+        # 3. Add styling
+        plt.title('Visualization of Tensor Data')
+        plt.xlabel('UNC Column 0')
+        plt.ylabel('UNC Column 1')
+        plt.legend()
+        plt.grid(True)
+
+        # 4. Save the image
+        plt.savefig('/home/nicola.debole/projects/Argus/argus/figs/my_tensor_plot1.png', dpi=300)
+
+        # Optional: Close the plot to free up memory
+        plt.close()
+        x = uncs[:,0]
+        y = uncs[:,40]
+        # 1. Convert to NumPy (handling GPU and Gradients)
+        x_np = x.detach().cpu().numpy()
+        y_np = y.detach().cpu().numpy()
+
+        # 2. Create the plot
+        plt.figure(figsize=(8, 6))
+        plt.scatter(x_np, y_np, alpha=0.5, label='Uncertainty Points')
+
+        # 3. Add styling
+        plt.title('Visualization of Tensor Data')
+        plt.xlabel('UNC Column 0')
+        plt.ylabel('UNC Column 1')
+        plt.legend()
+        plt.grid(True)
+
+        # 4. Save the image
+        plt.savefig('/home/nicola.debole/projects/Argus/argus/figs/my_tensor_plot2.png', dpi=300)
+
+        # Optional: Close the plot to free up memory
+        plt.close()
+        asd
+        global_uncs = torch.sum(uncs, dim=1)
+        
+        values, indexes = torch.topk(global_uncs, K, sorted=True, largest = True)
+        return [self.pool[i] for i in indexes]
+        
+    def sample_entropy(self, embeddings, K = 100) -> list:
+        # Evaluate input points from the pool
+        search_space = embeddings[self.pool]
+        
+        # Select the indexes with highest entropy
+        entropy_concepts = self.entropy(search_space)
+        
+        entropy_total = []
+        for task_id, (task_name, idx_range) in enumerate(self.concept_structure.items()):
+            num_classes = len(range(idx_range[0],idx_range[1]+1))
+            c_slice = entropy_concepts[:, range(idx_range[0],idx_range[1]+1)]
+            #print(c_slice.shape)
+            c_entropy, _ = torch.max(c_slice, dim=1)
+            entropy_total.append(c_entropy)
+        entropy_total = torch.sum(torch.stack(entropy_total, dim=1), dim=1)
+        #print(entropy_total.shape)
+        values, indexes = torch.topk(entropy_total, K, sorted=True, largest = True)
+        #print(values)
+        #print(indexes)
+        # Indexes are from 0 to n. embeddings, and refer to the embedding in the search space
+        # So their number refers to the index in the pool to be used
+        
+        # Return indexes
+        return [self.pool[i] for i in indexes]
+    
+    def plot(self,dataset,labels):
+        pred_probs = self.eval(dataset,labels)['probs']
+        # Plot results for a few tasks
+        plt.figure(figsize=(12, 6))
+        for t in range(min(4, self.num_concepts)):
+            plt.subplot(2, 2, t+1)
+            plt.title(f"Task {t}")
+            plt.plot(dataset.squeeze(), pred_probs[:, t].numpy(), label='Predictive Prob')
+            plt.scatter(dataset.squeeze(), labels[:, t], c='k', s=10, label='Train Labels')
+            plt.ylim([-0.1, 1.1])
+            plt.legend()
+        plt.tight_layout()
+        plt.savefig("eval.png")
+        
+    def visualize2D(self, dataset, n=2):
+        # Dimensionality Reduction on the embeddings
+        from sklearn.decomposition import PCA
+        X = PCA(n_components=n).fit_transform(dataset.cpu().numpy())
+        
+        
+        # Plot predictions and uncertainty
+        out_dict = self.eval(dataset)
+        for ii in range(100):
+            print(out_dict['probs'][ii], out_dict['std'][ii])
+            asd
+        
+        res_dict = {}
+        for i in range(self.num_concepts):
+            # Create a side-by-side figure
+            fig, axes = plt.subplots(1, 2, figsize=(12, 5))  # 1 row, 2 columns
+            
+            sc1 = axes[0].scatter(X[:, 0], X[:, 1], c=out_dict['probs'][:,i].cpu().numpy(), cmap='coolwarm', s=40)
+            axes[0].set_title("GP Predictive Mean")
+            axes[0].set_xlabel("Dim 1")
+            axes[0].set_ylabel("Dim 2")
+            fig.colorbar(sc1, ax=axes[0], label="Mean")
+
+            sc2 = axes[1].scatter(X[:, 0], X[:, 1], c=out_dict['std'][:,i].cpu().numpy(), cmap='viridis', s=40)
+            axes[1].set_title("GP Predictive Uncertainty (STD)")
+            axes[1].set_xlabel("Dim 1")
+            axes[1].set_ylabel("Dim 2")
+            fig.colorbar(sc2, ax=axes[1], label="Variance")
+
+            # Adjust layout and save
+            plt.tight_layout()
+            #plt.savefig(f"Concept_{i}.png", dpi=300, bbox_inches='tight')
+            res_dict[f"Concept_{i}.png"] = wandb.Image(fig)
+            plt.close()
+        wandb.log(res_dict)

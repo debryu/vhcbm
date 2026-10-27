@@ -8,6 +8,7 @@ import torch, os, copy
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import json
 
 def log_memory():
     # System RAM
@@ -20,9 +21,33 @@ def log_memory():
 # Put this inside your training loop
 log_memory()
 
+ADD_FN = {
+    'activeours': '94',
+    'randomc': '60'
+}
+def load_gp_args(folder, run_name):
+    with open(os.path.join(folder,run_name), 'r') as f:
+            dict = json.load(f)
+    
+    args = dict[0]
+    return args
+
 class ArgoBackbone():
     def __init__(self, model_path):
-        data_train, data_val, data_test = get_argo_act(model_path, model_path.split("-")[0])
+        dataset = model_path.split("-")[0]
+        date = '_'.join(model_path.split("_")[1:]).split('_SEED')[0]
+        acq_fn = model_path.split("-")[2]
+        seed = model_path.split("SEED=")[1].replace('.pt','')
+        run_name_json = f'{date}-MCSVGP_{dataset}_{acq_fn}_RBF_{ADD_FN[acq_fn]}__LOGS-SEED={seed}.json'
+        run_name_json = run_name_json.replace('clip/','').replace('dino/','')
+        try:
+            args = load_gp_args('/leonardo_scratch/fast/IscrC_ARGO/results/GPs/GPs', run_name_json)
+        except:
+            args = load_gp_args('/leonardo_scratch/fast/IscrC_ARGO/migrated_results/GPs/GPs', run_name_json)
+        #args = load_gp_args('/leonardo_scratch/large/userexternal/ndebole0/results/GPs/GPs', run_name_json)
+        save_f = '/leonardo_scratch/large/userexternal/ndebole0/models'
+        save_f = '/leonardo_scratch/fast/IscrC_ARGO/models_staging'
+        data_train, data_val, data_test = get_argo_act(model_path, model_path.split("-")[0], args = args, SAVE_F=save_f)
         
         self.data_train = data_train
         self.data_test = data_test
@@ -30,9 +55,17 @@ class ArgoBackbone():
         
     def get_concept_preds(self, split):
         logger.warning(f"Getting {split} concepts variables")
+        # 1. Determine which dataset to use
         dataset = {'test': self.data_test, 'train': self.data_train, 'val': self.data_val}[split]
         n_samples = len(dataset)
+        
+        # 2. Peek at the first item to get shapes for pre-allocation
         first_prob, first_pred, _, first_mean, first_std, first_gt = dataset[0]
+        #import pdb; pdb.set_trace()
+        #print(first_pred.shape)
+        #print(first_mean.shape)
+        #print(first_std.shape)
+        #print(first_gt.shape)
         
         # 3. Pre-allocate tensors (much more memory efficient)
         all_preds = torch.zeros((n_samples, *first_pred.shape), dtype=first_pred.dtype)
@@ -42,9 +75,9 @@ class ArgoBackbone():
         all_probs = torch.zeros((n_samples, *first_prob.shape), dtype=first_pred.dtype)
         
         # 4. Fill them in a loop
-        for i in range(n_samples):
+        for i in tqdm(range(n_samples)):
             prob, pred, unc, mean, std, gt = dataset[i]
-            print(prob.shape)
+            #print(prob.shape)
             all_probs[i] = prob.detach().cpu()
             all_preds[i] = pred.detach().cpu()
             all_means[i] = mean.detach().cpu()
@@ -58,7 +91,52 @@ class ArgoBackbone():
             'concept_stds': all_stds,
             'concept_gts': all_gts
         }
-            
+        
+    '''def get_concept_preds(self, split):
+        logger.warning(f"Getting {split} concepts variables")
+        concept_preds = []
+        concept_logits = []
+        means = []
+        stds = []
+        concept_gt = []
+        if split=='test':
+            for i in range(len(self.data_test)):
+                log_memory()
+                pred,unc,mean,std,gt = self.data_test[i]
+                concept_preds.append(pred.detach().cpu())
+                means.append(mean.detach().cpu())
+                stds.append(std.detach().cpu())
+                #concept_logits.append(torch.logit(pred, eps=1e-8))
+                concept_gt.append(gt.detach().cpu())
+        elif split=='train':
+            for i in range(len(self.data_train)):
+                log_memory()
+                pred,unc,mean,std,gt = self.data_train[i]
+                concept_preds.append(pred.detach().cpu())
+                means.append(mean.detach().cpu())
+                stds.append(std.detach().cpu())
+                #concept_logits.append(torch.logit(pred, eps=1e-8))
+                concept_gt.append(gt.detach().cpu())
+        if split=='val':
+            for i in range(len(self.data_val)):
+                pred,unc,mean,std,gt = self.data_val[i]
+                log_memory()
+                concept_preds.append(pred.detach().cpu())
+                means.append(mean.detach().cpu())
+                stds.append(std.detach().cpu())
+                #concept_logits.append(torch.logit(pred, eps=1e-8))
+                concept_gt.append(gt.detach().cpu())
+        concept_preds = torch.stack(concept_preds, dim=0)
+        concept_gt = torch.stack(concept_gt, dim=0)
+        means = torch.stack(means, dim=0)
+        stds = torch.stack(stds, dim=0)
+        concept_logits = torch.stack(concept_logits, dim=0)
+        return {'concept_preds':concept_preds,
+                #'concept_logits':concept_logits.detach().cpu(), 
+                'concept_means':means,
+                'concept_stds':stds,
+                'concept_gts':concept_gt}'''
+        
 class ArgoCBM(torch.nn.Module):
     def __init__(self, args):
         super().__init__()
@@ -121,11 +199,16 @@ class ArgoCBM(torch.nn.Module):
 
         # 2. Prepare DataLoaders
         train_loader = DataLoader(TensorDataset(train_x, train_y), batch_size=batch_size, shuffle=True)
+        # Validation and Test don't need shuffle
+        
         val_loader = DataLoader(TensorDataset(val_x, val_y), batch_size=batch_size)
+        
         # 3. Initialize Model, Loss, and Optimizer
+        # A simple linear layer (Logistic Regression if classes=2)
         model = torch.nn.Linear(input_dim, num_classes).to(device)
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
         # Early Stopping Variables
         best_val_loss = float('inf')
         best_model_state = None
@@ -181,3 +264,64 @@ class ArgoCBM(torch.nn.Module):
         torch.save(b_g, os.path.join(self.args.save_dir, "b_g.pt"))
 
         return self.args
+    
+    '''def train(self, train_x, val_x, test_x, train_y, val_y, test_y):
+        train_y = torch.LongTensor(train_y)
+        val_y = torch.LongTensor(val_y)
+        test_y = torch.LongTensor(test_y.long())
+        
+        indexed_train_ds = IndexedTensorDataset(train_x.float(), train_y)
+        val_ds = TensorDataset(val_x.float(), val_y)
+        test_ds = TensorDataset(test_x.float(), test_y)
+        
+        indexed_train_loader = DataLoader(
+            indexed_train_ds,
+            batch_size=256,
+            shuffle=True,
+        )
+        val_loader = DataLoader(val_ds,
+                                batch_size=256,
+                                shuffle=False)
+        test_loader = DataLoader(test_ds,
+                                batch_size=256,
+                                shuffle=False)
+
+        #classes_ = LABELS[args.dataset.split("_")[0]]
+
+        # -----------------------------
+        # Linear model (CPU on purpose)
+        # -----------------------------
+        linear = torch.nn.Linear(
+            train_x.shape[1],
+            self.args.num_classes
+        )                                                               
+
+        linear.weight.data.zero_()
+        linear.bias.data.zero_()
+
+        metadata = {
+            "max_reg": {"nongrouped": 0.0006}
+        }
+        self.args.predictor = "saga"
+        if self.args.predictor == "saga":
+            output_proj = glm_saga(
+                linear,
+                indexed_train_loader,
+                0.1,
+                2000,
+                0.99,
+                epsilon=1,
+                k=1,
+                val_loader=val_loader,
+                test_loader=test_loader,
+                do_zero=False,
+                metadata=metadata,
+                n_ex=train_x.shape[0],
+                n_classes=self.args.num_classes,
+            )
+
+            W_g = output_proj["path"][0]["weight"]
+            b_g = output_proj["path"][0]["bias"]
+        torch.save(W_g, os.path.join(self.args.save_dir, "W_g.pt"))
+        torch.save(b_g, os.path.join(self.args.save_dir, "b_g.pt"))
+        return args'''

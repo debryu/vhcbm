@@ -116,6 +116,10 @@ def parse_args():
 if __name__ == "__main__":
     start_time = datetime.datetime.now()
     args = parse_args()
+    #args.model_path = "cub-220-randomc-RBF-686_2026_02_19_21_31_SEED=686.pt"
+    #args.model_path = "celeba-220-randomc-RBF-868_2026_02_19_20_13_SEED=868.pt"
+    #args.model_path = "cub-220-randomc-RBF-123_2026_02_21_19_34_SEED=123.pt"
+    
     model = ArgoCBM(args)
     train_y = []
     data_train = GenericDataset(ds_name = args.dataset, split='train')
@@ -148,6 +152,60 @@ if __name__ == "__main__":
     means = train['concept_means'].numpy()
     stds  = train['concept_stds'].numpy()
     gts   = train['concept_gts'].numpy()
+    
+
+    #import pdb; pdb.set_trace()
+    
+    '''N, C = preds.shape
+    df_train = pd.DataFrame(
+        data=np.concatenate([preds, means, stds, gts, train_y.unsqueeze(-1)], axis=1),
+        columns=(
+            #[f"probs_{i}" for i in range(probs.shape[1])] +
+            [f"pred_{i}" for i in range(preds.shape[1])] +
+            [f"mean_{i}" for i in range(means.shape[1])] +
+            [f"std_{i}"  for i in range(stds.shape[1])] +
+            [f"gt_concept_{i}"   for i in range(gts.shape[1])] +
+            [f"gt_label" ]
+        )
+    )
+    probs = train['concept_probs'].numpy()
+    preds = test['concept_preds'].numpy()
+    means = test['concept_means'].numpy()
+    stds  = test['concept_stds'].numpy()
+    gts   = test['concept_gts'].numpy()
+    N, C = gts.shape
+    df_test = pd.DataFrame(
+        data=np.concatenate([preds, means, stds, gts, test_y.unsqueeze(-1)], axis=1),
+        columns=(
+            #[f"probs_{i}" for i in range(probs.shape[1])] +
+            [f"pred_{i}" for i in range(preds.shape[1])] +
+            [f"mean_{i}" for i in range(means.shape[1])] +
+            [f"std_{i}"  for i in range(stds.shape[1])] +
+            [f"gt_concept_{i}"   for i in range(gts.shape[1])] +
+            [f"gt_label" ]
+        )
+    )
+    probs = train['concept_probs'].numpy()
+    preds = val['concept_preds'].numpy()
+    means = val['concept_means'].numpy()
+    stds  = val['concept_stds'].numpy()
+    gts   = val['concept_gts'].numpy()
+    N, C = preds.shape
+    df_val = pd.DataFrame(
+        data=np.concatenate([preds, means, stds, gts, val_y.unsqueeze(-1)], axis=1),
+        columns=(
+            #[f"probs_{i}" for i in range(probs.shape[1])] +
+            [f"pred_{i}" for i in range(preds.shape[1])] +
+            [f"mean_{i}" for i in range(means.shape[1])] +
+            [f"std_{i}"  for i in range(stds.shape[1])] +
+            [f"gt_concept_{i}"   for i in range(gts.shape[1])] +
+            [f"gt_label" ]
+        )
+    )
+    df_train.to_csv("./figs/cub-random-train.csv", index=False)
+    df_test.to_csv("./figs/cub-random-test.csv", index=False)
+    df_val.to_csv("./figs/cub-random-val.csv", index=False)
+    '''
 
     num_MC_samples = 30
     num_samples = train['concept_means'].shape[0]
@@ -162,6 +220,36 @@ if __name__ == "__main__":
     
     Y = train_y.repeat(num_MC_samples, 1).flatten()
      
+    '''if X.shape[1] != args.num_c:
+        X_binary = torch.zeros((num_samples*num_MC_samples, args.num_c))
+        for i in range(X_binary.shape[1]):
+            X_binary[:,i] = torch.nn.functional.softmax(X[:,2*i:2*i+2], dim=1)[:,1]
+        X = X_binary
+    else:
+        for task_id, (task_name, idx_range) in enumerate(args.concept_structure.items()):
+            num_classes = len(range(idx_range[0],idx_range[1]+1))
+            X[:,idx_range[0]:idx_range[1]+1] = torch.softmax(X[:, idx_range[0]:idx_range[1]+1], dim=1)   
+        
+    #import pdb; pdb.set_trace()
+    if val['concept_probs'].shape[1] != args.num_c:
+        temp_binary = torch.zeros((val['concept_probs'].shape[0], args.num_c))
+        for i in range(temp_binary.shape[1]):
+            temp_binary[:,i] = val['concept_probs'][:,2*i+1]
+        val_X = temp_binary
+    else:
+        val_X = val['concept_probs'] 
+    
+    if test['concept_probs'].shape[1] != args.num_c:
+        temp_binary = torch.zeros((test['concept_probs'].shape[0], args.num_c))
+        for i in range(temp_binary.shape[1]):
+            temp_binary[:,i] = test['concept_probs'][:,2*i+1]
+        test_X = temp_binary
+    else:
+        test_X = test['concept_probs'] '''
+        
+    #model.train(torch.cat([train['concept_means'], train['concept_stds']**2], dim=1), torch.cat([val['concept_means'], val['concept_stds']**2], dim=1), torch.cat([test['concept_means'], test['concept_stds']**2], dim=1), train_y, val_y, test_y)
+    print(X.shape)
+    #model.train(X, val_X, test_X, Y, val_y, test_y)
     model.train(X, val['concept_means'], test['concept_means'], Y, val_y, test_y)
     save_args(args)
     end_time = datetime.datetime.now()

@@ -15,10 +15,11 @@ from argus.models.base import train_LR_on_concepts
 SEED = int(os.environ.get("SEED", 42))
 DS_NAME = os.environ.get("DS_NAME", "dermamnist")
 set_seed(SEED)
-MODEL_NAME = str(os.environ.get("MODEL_NAME",'ViT-L/14'))
+MODEL_NAME = str(os.environ.get("VLM",'ViT-L/14'))
 DEVICE = str(os.environ.get("DEVICE",'cuda'))
 FAST_STORAGE = str(os.environ.get("FAST"))
-SAVE_FOLDER = f"{FAST_STORAGE}/results/baselines"
+SCRATCH_STORAGE = str(os.environ.get("SCRATCH"))
+SAVE_FOLDER = f"{SCRATCH_STORAGE}/results/baselines"
 activations_folder = os.path.join(FAST_STORAGE,"activations")
 os.makedirs(os.path.join(activations_folder), exist_ok=True)
 
@@ -154,9 +155,10 @@ with torch.no_grad():
     # Normalization
     val_embeddings = (val_embeddings - torch.mean(val_embeddings, dim=0, keepdim=True))/torch.std(val_embeddings, dim=0, keepdim=True)
     
-    text_embeddings = torch.load(os.path.join(activations_folder,f'{ds_name}_concepts_{MODEL_NAME_SANITIZED}.pth'))
-    # Normalization
-    text_embeddings = (text_embeddings - torch.mean(text_embeddings, dim=0, keepdim=True))/torch.std(text_embeddings, dim=0, keepdim=True)
+    if MODEL_NAME == 'ViT-L%14':
+        text_embeddings = torch.load(os.path.join(activations_folder,f'{ds_name}_concepts_{MODEL_NAME_SANITIZED}.pth'))
+        # Normalization
+        text_embeddings = (text_embeddings - torch.mean(text_embeddings, dim=0, keepdim=True))/torch.std(text_embeddings, dim=0, keepdim=True)
 
     
 train_data = GenericDataset(ds_name=ds_name,split = 'train')
@@ -166,13 +168,15 @@ test_data = GenericDataset(ds_name=ds_name,split = 'test')
 
 
 # CLIP SCORES BASELINE
-text_normed = text_embeddings/(text_embeddings.norm(p=2, dim=-1, keepdim = True).float())
+if MODEL_NAME == 'ViT-L%14':
+    text_normed = text_embeddings/(text_embeddings.norm(p=2, dim=-1, keepdim = True).float())
+    train_feats = train_embeddings @ text_embeddings.T
+    test_feats = test_embeddings @ text_embeddings.T
+    # Normalize for SVM training
+    CLIP = evaluate_clip_scores(n_concepts=n_concepts, clip_scores=test_feats, dataset=test_data)
+
 train_normed = train_embeddings/(train_embeddings.norm(p=2, dim=-1, keepdim = True).float())
 test_normed = test_embeddings/(test_embeddings.norm(p=2, dim=-1, keepdim = True).float())
-train_feats = train_embeddings @ text_embeddings.T
-test_feats = test_embeddings @ text_embeddings.T
-# Normalize for SVM training
-CLIP = evaluate_clip_scores(n_concepts=n_concepts, clip_scores=test_feats, dataset=test_data)
 
 # LINEAR BASELINE
 linear_model = SVM_Linear(n_concepts=n_concepts)

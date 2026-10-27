@@ -140,6 +140,9 @@ class BIOVIL_WRAPPER(MODEL_WRAPPER):
     def get_transform(self):
         return self.image_inference.transform
 
+
+
+
 def save_activations(model_name, split, dataset, activations_folder, **kwargs):
     device = 'cuda'
     MODEL_NAME_SANITIZED = model_name.replace('/','%')
@@ -208,7 +211,7 @@ def save_concept_activations(model_name, split, dataset, activations_folder, **k
     logger.debug(f"Saving CONCEPTS activations for {model_name} {split} {dataset}.")
     
     # Load concepts
-    with open(os.path.join(os.environ.get("CONCEPTS_PATH", './data/concepts'),'concepts.txt')) as f:
+    with open(os.path.join(os.environ.get("CONCEPTS_PATH", '/mnt/cimec-storage6/users/nicola.debole/home/CQA/data/concepts/dermamnist'),'concepts.txt')) as f:
         concept_texts = f.read().split("\n")
     print(concept_texts)
     
@@ -256,12 +259,12 @@ def save_ensembled_activations(model_name, split, dataset, activations_folder, *
     logger.debug(f"Saving ENSEMBLED CONCEPTS activations for {model_name} {split} {dataset}.")
     
     # Load concepts
-    with open(os.path.join(os.environ.get("CONCEPTS_PATH", '/home/default_path'),'concepts.txt')) as f:
+    with open(os.path.join(os.environ.get("CONCEPTS_PATH", '/mnt/cimec-storage6/users/nicola.debole/home/CQA/data/concepts/dermamnist'),'concepts.txt')) as f:
         concept_texts = f.read().split("\n")
         
     # load prompts
         
-    with open(os.path.join(os.environ.get("PROMPTS_PATH", '/home/default_path'),'prompts.txt')) as f:
+    with open(os.path.join(os.environ.get("PROMPTS_PATH", '/mnt/cimec-storage6/users/nicola.debole/home/CQA/data/concepts/dermamnist'),'prompts.txt')) as f:
         prompts = f.read().split("\n")
         
     

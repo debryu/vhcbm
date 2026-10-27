@@ -6,18 +6,18 @@ import random
 import torch.nn.functional as F
 
 FAST_STORAGE = os.environ["FAST"]
-MODEL_NAME = str(os.environ.get("MODEL_NAME",'ViT-L/14'))
+#MODEL_NAME = str(os.environ.get("MODEL_NAME",'ViT-L/14'))
 DEVICE = str(os.environ.get("DEVICE",'cuda'))
 from argus.models.MCSVGPDO import MCSVGP
 import os
 ds_name = os.environ.get("DS_NAME", "shapes3d")
 acq_fn = os.environ.get("ACQ_FN", "random")
 activations_folder = os.path.join(FAST_STORAGE,"activations")
-SAVE_FOLDER = os.path.join(FAST_STORAGE,"models")
+#SAVE_FOLDER = os.path.join(FAST_STORAGE,"models")
 
 
 
-def get_argo_act(model_name, ds_name, SAVE_F = SAVE_FOLDER):
+def get_argo_act(model_name, ds_name, args, SAVE_F):
     if ds_name == 'celeba':
         n_concepts = 39
         concept_structure = {   '1':(0,0),
@@ -82,10 +82,11 @@ def get_argo_act(model_name, ds_name, SAVE_F = SAVE_FOLDER):
             'shape': (38, 41),
         }
     else:
-        
+        print(ds_name)
         subset_size = 500
-    steps = range(n_concepts,700, n_concepts)
+    #steps = range(n_concepts,700, n_concepts)
     
+    MODEL_NAME = args['backbone']
     # Load Embeddings
     MODEL_NAME_SANITIZED = MODEL_NAME.replace('/','%')
 
@@ -102,31 +103,47 @@ def get_argo_act(model_name, ds_name, SAVE_F = SAVE_FOLDER):
         # Normalization
         val_embeddings = (val_embeddings - torch.mean(val_embeddings, dim=0, keepdim=True))/torch.std(val_embeddings, dim=0, keepdim=True)
         
-        text_embeddings = torch.load(os.path.join(activations_folder,f'{ds_name}_concepts_{MODEL_NAME_SANITIZED}.pth'))
+        #text_embeddings = torch.load(os.path.join(activations_folder,f'{ds_name}_concepts_{MODEL_NAME_SANITIZED}.pth'))
         # Normalization
-        text_embeddings = (text_embeddings - torch.mean(text_embeddings, dim=0, keepdim=True))/torch.std(text_embeddings, dim=0, keepdim=True)
+        #text_embeddings = (text_embeddings - torch.mean(text_embeddings, dim=0, keepdim=True))/torch.std(text_embeddings, dim=0, keepdim=True)
         train_embeddings = F.normalize(train_embeddings, p=2, dim=-1)
         test_embeddings = F.normalize(test_embeddings, p=2, dim=-1)
         val_embeddings = F.normalize(val_embeddings, p=2, dim=-1)
+
     model = MCSVGP.load(os.path.join(SAVE_F,model_name), device = 'cuda')
     
     output = model.evalmc(train_embeddings)
+    #print(output)
     data_train = []
     gt_data = GenericDataset(ds_name=ds_name, split='train')
     for i in range(len(output['probs'])):
+        #print(output['preds'][i].shape)
+        #print(output['soft_std'][i].shape)
+        #print(output['std'].shape)
+        #print(output['means'].shape)
+        #print(output['probs'].shape)
         data_train.append((output['probs'][i].detach().cpu(),output['preds'][i].detach().cpu(), output['soft_std'][i].detach().cpu(), output['means'][i].detach().cpu(), output['std'][i].detach().cpu(), gt_data[i][1] ))
     
+    #print(len(data))
+    #torch.save(data, os.path.join(SAVE_F,"argo_train.pt"))
+
     output = model.evalmc(val_embeddings)
     data_val = []
     gt_data = GenericDataset(ds_name=ds_name, split='val')
     for i in range(len(output['probs'])):
+        #print(output['probs'].shape)
         data_val.append((output['probs'][i].detach().cpu(),output['preds'][i].detach().cpu(), output['soft_std'][i].detach().cpu(), output['means'][i].detach().cpu(), output['std'][i].detach().cpu(), gt_data[i][1] ))
+    #print(len(data))
+    #torch.save(data, os.path.join(SAVE_F,"argo_val.pt"))
     
     output = model.evalmc(test_embeddings)
     data_test = []
     gt_data = GenericDataset(ds_name=ds_name, split='test')
     for i in range(len(output['probs'])):
+        #print(output['probs'].shape)
         data_test.append((output['probs'][i].detach().cpu(),output['preds'][i].detach().cpu(), output['soft_std'][i].detach().cpu(), output['means'][i], output['std'][i].detach().cpu(), gt_data[i][1] ))
+    #print(len(data))
+    #torch.save(data, os.path.join(SAVE_F,"argo_test.pt"))
     
     return data_train, data_val, data_test
 

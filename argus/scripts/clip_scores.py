@@ -12,7 +12,7 @@ import datetime
 
 DEVICE = str(os.environ.get("DEVICE",'cuda'))
 KERNEL = os.environ.get("KERNEL", 'linear')
-FAST_STORAGE = os.environ.get("FAST", "/mnt/external_storage")
+FAST_STORAGE = os.environ.get("FAST", "/home/nicola.debole/projects/Argus/argus")
 SAVE_FOLDER = f"{FAST_STORAGE}/results/baselines"
 MODEL_NAME = str(os.environ.get("MODEL_NAME",'ViT-L/14'))
 activations_folder = os.path.join(FAST_STORAGE,"activations")

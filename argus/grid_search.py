@@ -23,10 +23,12 @@ if os.path.exists("./results/grid_search.json"):
         data = json.load(f)
 
     # Sorted by keys
-    sorted_dict = dict(sorted(data.items(), key = lambda x: x[1]['f1']))  
+    sorted_dict = dict(sorted(data.items(), key = lambda x: x[1]['f1']))  # x is a tuple (key, value) so i want to sort by value of f1-score
+
     print(sorted_dict)
     with open(os.path.join("./results",f'sorted.json'), 'w') as f:
         json.dump(sorted_dict, f, indent=4)
+    asd
 
 
 name = 'SVGP'
@@ -60,19 +62,19 @@ else:
 CLIP_NAME = 'ViT-L/14'
 CLIP_NAME_SANITIZED = CLIP_NAME.replace('/','%')
 with torch.no_grad():
-    train_embeddings = torch.load(f'./activations/{ds_name}_train_{CLIP_NAME_SANITIZED}.pth')
+    train_embeddings = torch.load(f'/home/nicola.debole/projects/Caching/activations/{ds_name}_train_{CLIP_NAME_SANITIZED}.pth')
     # Normalization
     train_embeddings /= torch.norm(train_embeddings, dim=1, keepdim=True)
     
-    test_embeddings = torch.load(f'./activations/{ds_name}_test_{CLIP_NAME_SANITIZED}.pth')
+    test_embeddings = torch.load(f'/home/nicola.debole/projects/Caching/activations/{ds_name}_test_{CLIP_NAME_SANITIZED}.pth')
     # Normalization
     test_embeddings /= torch.norm(test_embeddings, dim=1, keepdim=True)
     
-    val_embeddings = torch.load(f'./activations/{ds_name}_val_{CLIP_NAME_SANITIZED}.pth')
+    val_embeddings = torch.load(f'/home/nicola.debole/projects/Caching/activations/{ds_name}_val_{CLIP_NAME_SANITIZED}.pth')
     # Normalization
     val_embeddings /= torch.norm(val_embeddings, dim=1, keepdim=True)
     
-    text_embeddings = torch.load(f'./activations/{ds_name}_concepts_{CLIP_NAME_SANITIZED}.pth')
+    text_embeddings = torch.load(f'/home/nicola.debole/projects/Caching/activations/{ds_name}_concepts_{CLIP_NAME_SANITIZED}.pth')
     # Normalization
     text_embeddings /= torch.norm(text_embeddings, dim=1, keepdim=True)
 
@@ -84,6 +86,7 @@ preprocess =  Compose([
         Resize(224, interpolation=BICUBIC),
         CenterCrop(224),
         ToTensor(),
+        #Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
     ])
 
 results = {}

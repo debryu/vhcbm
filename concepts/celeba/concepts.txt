@@ -1,0 +1,39 @@
+5 o Clock_Shadow
+Arched Eyebrows
+Attractive
+Bags Under Eyes
+Bald
+Bangs
+Big Lips
+Big Nose
+Black Hair
+Blond Hair
+Blurry
+Brown Hair
+Bushy Eyebrows
+Chubby
+Double Chin
+Eyeglasses
+Goatee
+Gray Hair
+Heavy Makeup
+High Cheekbone
+Mouth Slightly Open
+Mustache
+Narrow Eyes
+No Beard
+Oval Face
+Pale Skin
+Pointy Nose
+Receding Hairline
+Rosy Cheeks
+Sideburns
+Smiling
+Straight Hair
+Wavy Hair
+Wearing Earrings
+Wearing Hat
+Wearing Lipstick
+Wearing Necklace
+Wearing Necktie
+Young
