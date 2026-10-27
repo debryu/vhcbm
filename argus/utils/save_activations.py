@@ -211,6 +211,7 @@ def save_concept_activations(model_name, split, dataset, activations_folder, **k
     logger.debug(f"Saving CONCEPTS activations for {model_name} {split} {dataset}.")
     
     # Load concepts
+    # NOTE: cluster-specific path, replace with your own location
     with open(os.path.join(os.environ.get("CONCEPTS_PATH", '/mnt/cimec-storage6/users/nicola.debole/home/CQA/data/concepts/dermamnist'),'concepts.txt')) as f:
         concept_texts = f.read().split("\n")
     print(concept_texts)
@@ -259,11 +260,13 @@ def save_ensembled_activations(model_name, split, dataset, activations_folder, *
     logger.debug(f"Saving ENSEMBLED CONCEPTS activations for {model_name} {split} {dataset}.")
     
     # Load concepts
+    # NOTE: cluster-specific path, replace with your own location
     with open(os.path.join(os.environ.get("CONCEPTS_PATH", '/mnt/cimec-storage6/users/nicola.debole/home/CQA/data/concepts/dermamnist'),'concepts.txt')) as f:
         concept_texts = f.read().split("\n")
         
     # load prompts
         
+    # NOTE: cluster-specific path, replace with your own location
     with open(os.path.join(os.environ.get("PROMPTS_PATH", '/mnt/cimec-storage6/users/nicola.debole/home/CQA/data/concepts/dermamnist'),'prompts.txt')) as f:
         prompts = f.read().split("\n")
         

@@ -18,6 +18,7 @@ Output: rebuttal_drafts/probe_metrics_gap.jsonl  (append-only, resumable)
 """
 import sys, os, json, time, glob
 
+# NOTE: cluster-specific path, replace with your own location
 sys.path.insert(0, '/leonardo_scratch/fast/IscrC_ARGO/argobackup')
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/CQA')
 
@@ -31,6 +32,7 @@ from CQA.datasets import GenericDataset
 
 FAST = os.environ["FAST"]
 ACT = os.path.join(FAST, "activations")
+# NOTE: cluster-specific path, replace with your own location
 OUT = '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts/probe_metrics_gap.jsonl'
 TMP = '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/figs/ece'
 os.makedirs(TMP, exist_ok=True)

@@ -7,6 +7,7 @@ import os
 from multiprocessing import Pool
 from loguru import logger
 
+# NOTE: cluster-specific path, replace with your own location
 SAVE_DIR = "/leonardo_scratch/fast/IscrC_ARGO/competitors"
 CUDA_VISIBLE_DEVICES = '1'
 vlg_run = {

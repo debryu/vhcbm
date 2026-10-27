@@ -5,11 +5,13 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --time=06:00:00
 #SBATCH --array=0-26%8
+# NOTE: cluster-specific, replace with your log directory
 #SBATCH --output=/leonardo_scratch/fast/IscrC_ARGO/results/FAIRCBM/slurm-interv-%A_%a.out
 #SBATCH --error=/leonardo_scratch/fast/IscrC_ARGO/results/FAIRCBM/slurm-interv-%A_%a.err
 
 module load python
 module load cuda
+# NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
 # Jul 29 coverage fill: rerun with the FIXED group_scores_ucp (float64/eps=1e-12 — the old
@@ -19,6 +21,7 @@ source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 python - <<'END'
 import os, subprocess
 
+# NOTE: cluster-specific path, replace with your own location
 base = '/leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM'
 dirs = []
 for sub in ['clip', 'dino', 'resnet18']:

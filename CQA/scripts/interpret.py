@@ -17,8 +17,10 @@ def load_linear_from_folder(folder):
 
     return model
 
+# NOTE: cluster-specific path, replace with your own location
 modelA = load_linear_from_folder("/leonardo_scratch/fast/IscrC_ARGO/results/CBMs/argo_shapes3d_2026_01_13_22_29_SEED=42_POOLSIZE=462")
 #modelA = load_linear_from_folder("/leonardo_scratch/fast/IscrC_ARGO/results/CBMs/argo_shapes3d_2026_01_13_21_01_SEED=42_POOLSIZE=462")
+# NOTE: cluster-specific path, replace with your own location
 modelB = load_linear_from_folder("/leonardo_scratch/fast/IscrC_ARGO/results/fixed_models/CBM/cbmlite/cbmlite_shapes3d_2026_01_12_15_54_SEED=5_SUBSETSIZE=420")
 
 

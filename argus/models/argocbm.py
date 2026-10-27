@@ -41,10 +41,13 @@ class ArgoBackbone():
         run_name_json = f'{date}-MCSVGP_{dataset}_{acq_fn}_RBF_{ADD_FN[acq_fn]}__LOGS-SEED={seed}.json'
         run_name_json = run_name_json.replace('clip/','').replace('dino/','')
         try:
+            # NOTE: cluster-specific path, replace with your own location
             args = load_gp_args('/leonardo_scratch/fast/IscrC_ARGO/results/GPs/GPs', run_name_json)
         except:
+            # NOTE: cluster-specific path, replace with your own location
             args = load_gp_args('/leonardo_scratch/fast/IscrC_ARGO/migrated_results/GPs/GPs', run_name_json)
         #args = load_gp_args('/leonardo_scratch/large/userexternal/ndebole0/results/GPs/GPs', run_name_json)
+        # NOTE: cluster-specific path, replace with your own location
         save_f = '/leonardo_scratch/large/userexternal/ndebole0/models'
         save_f = '/leonardo_scratch/fast/IscrC_ARGO/models_staging'
         data_train, data_val, data_test = get_argo_act(model_path, model_path.split("-")[0], args = args, SAVE_F=save_f)

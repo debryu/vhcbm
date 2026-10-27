@@ -12,6 +12,7 @@ probe sees the embeddings it was trained on.
 Output: rebuttal_drafts/sscbm_calibration_N340.jsonl (one row per run) + a printed summary.
 """
 import os, sys, json, glob
+# NOTE: cluster-specific path, replace with your own location
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/argus')
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/CQA')
 import torch
@@ -22,8 +23,10 @@ from argus.metrics.ecce import _cumulative, _equiprob
 from argus.metrics.ece import ece_from_probs
 from CQA.datasets import GenericDataset
 
+# NOTE: cluster-specific path, replace with your own location
 FAST = os.environ.get('FAST', '/leonardo_scratch/fast/IscrC_ARGO')
 ACT = os.path.join(FAST, 'activations')
+# NOTE: cluster-specific path, replace with your own location
 OUT = '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts/sscbm_calibration_N340.jsonl'
 os.makedirs('./figs/ece', exist_ok=True)   # _cumulative/_equiprob write plots there
 

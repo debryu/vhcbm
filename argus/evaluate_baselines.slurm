@@ -10,6 +10,7 @@
 
 module load python
 module load cuda
+# NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
 # Ensure results folder exists

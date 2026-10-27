@@ -197,6 +197,7 @@ RESNETCBM_MODELS = [
     'resnetcbm_shapes3d_2025_11_15_08_19',
 ]
 
+# NOTE: cluster-specific path, replace with your own location
 save_dir = "/leonardo_scratch/fast/IscrC_ARGO/results/calibration"
 
 '''for model_path in RESNETCBM_MODELS:

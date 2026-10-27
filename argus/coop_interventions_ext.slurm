@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=coop_ext
+# NOTE: cluster-specific, replace with your SLURM account
 #SBATCH --account=iscrc_argo
 #SBATCH --partition=boost_usr_prod
 #SBATCH --gres=gpu:1
@@ -7,10 +8,12 @@
 #SBATCH --mem=120G
 #SBATCH --time=03:00:00
 #SBATCH --array=0-23
+# NOTE: cluster-specific, replace with your log directory
 #SBATCH --output=/leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM/slurm-coopext-%A_%a.out
 #SBATCH --error=/leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM/slurm-coopext-%A_%a.err
 module load python
 module load cuda
+# NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 cd /leonardo_scratch/fast/IscrC_ARGO/argobackup/argus
 export MPLBACKEND=agg
@@ -41,6 +44,7 @@ fi
 echo "=== model=$M dataset=$D backbone=$BB seed=$S ==="
 if [ "$M" = "vh" ]; then
   SUB=$([ "$BB" = "clip" ] && echo clip || echo dino)
+  # NOTE: cluster-specific path, replace with your own location
   LD=$(ls -d /leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM/${SUB}/${D}-510-activeours-RBF-${S}_*_SEED=${S})
   echo "load_dir=$LD"
   python eval_interventions_coop.py -dataset $D -backbone $BB -seed $S -model vh -load_dir "$LD"

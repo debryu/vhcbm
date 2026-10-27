@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=int_aware
+# NOTE: cluster-specific, replace with your SLURM account
 #SBATCH --account=iscrc_argo
 #SBATCH --partition=boost_usr_prod
 #SBATCH --gres=gpu:1
@@ -7,17 +8,20 @@
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
 #SBATCH --array=0-2
+# NOTE: cluster-specific, replace with your log directory
 #SBATCH --output=/leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM/slurm-intaware-%A_%a.out
 #SBATCH --error=/leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM/slurm-intaware-%A_%a.err
 
 module load python
 module load cuda
+# NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
 # D1c: does intervention-aware training of the *task head only* remove the non-monotonic
 # intervention curve? Retrains the final linear layer on the same saved concept means with random
 # intervention augmentation. The GP concept layer, its annotation budget and all concept metrics
 # are untouched, so this cannot change any other number in the paper.
+# NOTE: cluster-specific path, replace with your own location
 cd /leonardo_scratch/fast/IscrC_ARGO/argobackup/argus
 export MPLBACKEND=agg
 

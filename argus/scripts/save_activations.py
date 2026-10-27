@@ -14,6 +14,7 @@ from loguru import logger
 import numpy as np
 
 device = 'cuda'
+# NOTE: cluster-specific path, replace with your own location
 ACTIVATIONS_FOLDER = '/leonardo_scratch/fast/IscrC_ARGO/activations'
 
 MODEL_NAME = 'dinov3' # ['ViT-L/14', 'dinov3']

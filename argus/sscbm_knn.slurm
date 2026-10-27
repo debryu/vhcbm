@@ -5,11 +5,13 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --time=10:00:00
 #SBATCH --array=0-23%8
+# NOTE: cluster-specific, replace with your log directory
 #SBATCH --output=/leonardo_scratch/fast/IscrC_ARGO/results/SSCBM/slurm-%A_%a.out
 #SBATCH --error=/leonardo_scratch/fast/IscrC_ARGO/results/SSCBM/slurm-%A_%a.err
 
 module load python
 module load cuda
+# NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
 # E5 rebuttal (upgraded to P1): SSCBM-style pseudo-labeling over frozen embeddings.

@@ -1,4 +1,5 @@
 SAVED_MODELS_FOLDER = {  
+  # NOTE: cluster-specific path, replace with your own location
   "vlgcbm":"/leonardo_scratch/fast/IscrC_ARGO/results/CBMs",
   "lfcbm":"/leonardo_scratch/fast/IscrC_ARGO/results/CBMs",
   "labo":"/leonardo_scratch/fast/IscrC_ARGO/results/CBMs",
@@ -10,24 +11,29 @@ SAVED_MODELS_FOLDER = {
 }
 
 ACTIVATIONS_PATH = {
+  # NOTE: cluster-specific path, replace with your own location
   "shared":"/leonardo_scratch/fast/IscrC_ARGO/activations/clip",
     #"shared":"/mnt/cimec-storage6/shared/assembly/data/activations/",   # Share the activations between models and runs to save space
     "default":"",                     # Save the activation in each of the model folders
 }
 
 DATASETS_FOLDER_PATHS = {
+  # NOTE: cluster-specific path, replace with your own location
   "celeba":"/leonardo/home/userexternal/ndebole0/data/celeba_manual_download" ,
   "shapes3d":"/leonardo/home/userexternal/ndebole0/data/shapes3d" ,
   #"cifar10":"/mnt/cimec-storage6/shared/cv_datasets/cifar10",
+  # NOTE: cluster-specific path, replace with your own location
   "cub":"/leonardo/home/userexternal/ndebole0/data/cub",
   "dermamnist":'/leonardo/home/userexternal/ndebole0/data/dermamnist',
 }
 
 CONCEPT_SETS = {
   "root":"./data_concepts/",
+  # NOTE: cluster-specific path, replace with your own location
   "celeba":"/leonardo_scratch/fast/IscrC_ARGO/concepts/celeba/concepts.txt",
   "shapes3d":"/leonardo_scratch/fast/IscrC_ARGO/concepts/shapes3d/concepts.txt",
   #"cifar10": "/leonardo_scratch/fast/IscrC_ARGO/concepts/celeba/concepts.txt",
+  # NOTE: cluster-specific path, replace with your own location
   "cub":"/leonardo_scratch/fast/IscrC_ARGO/concepts/cub/concepts.txt",
   "cub_short":"/leonardo_scratch/fast/IscrC_ARGO/concepts/cub/short.txt",
   "dermamnist":"/leonardo_scratch/fast/IscrC_ARGO/concepts/dermamnist/concepts.txt",

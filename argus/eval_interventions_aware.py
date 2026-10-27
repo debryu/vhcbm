@@ -20,6 +20,7 @@ Output: appends to rebuttal_drafts/D1_interventions_aware.jsonl
 """
 import sys, os, json, argparse, time
 
+# NOTE: cluster-specific path, replace with your own location
 sys.path.insert(0, '/leonardo_scratch/fast/IscrC_ARGO/argobackup')
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/CQA')
 
@@ -33,6 +34,7 @@ from eval_interventions import (FRACTIONS, N_RANDOM_REPS, CONCEPT_STRUCTURES, gr
                                build_gt_encoding, to_empirical, group_scores_ucp,
                                group_scores_gpstd, intervene, eval_preds)
 
+# NOTE: cluster-specific path, replace with your own location
 OUT = '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts/D1_interventions_aware.jsonl'
 EPOCHS, LR, BS, PATIENCE = 300, 1e-3, 1024, 20
 

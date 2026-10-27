@@ -1,5 +1,6 @@
 import sys
 import os
+# NOTE: cluster-specific path, replace with your own location
 os.chdir('/mnt/cimec-storage6/users/nicola.debole/home/CQA')
 sys.path.append('/mnt/cimec-storage6/users/nicola.debole/home/CQA')
 

@@ -1,20 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=rn_cbm
+# NOTE: cluster-specific, replace with your SLURM account
 #SBATCH --account=iscrc_argo
 #SBATCH --partition=boost_usr_prod
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=16
 #SBATCH --time=06:00:00
 #SBATCH --array=0-2%3
+# NOTE: cluster-specific, replace with your log directory
 #SBATCH --output=/leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM/slurm-rncbm-%A_%a.out
 #SBATCH --error=/leonardo_scratch/fast/IscrC_ARGO/results/ARGOCBM/slurm-rncbm-%A_%a.err
 
 module load python
 module load cuda
+# NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
 # E1-symmetric: task head + eval for the VH-CBM ResNet18 GPs (cub, K=510, seeds 132/213/312).
 # Completes the ResNet18 row (F1(Y)) vs FairCBM-ResNet18 and the paper's CBM-ResNet18.
+# NOTE: cluster-specific path, replace with your own location
 cd /leonardo_scratch/fast/IscrC_ARGO/argobackup/argus
 python - <<'END'
 import os, subprocess

@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=gap_arr
+# NOTE: cluster-specific, replace with your SLURM account
 #SBATCH --account=iscrc_argo
 #SBATCH --partition=boost_usr_prod
 #SBATCH --gres=gpu:1
@@ -7,11 +8,13 @@
 #SBATCH --mem=64G
 #SBATCH --time=03:00:00
 #SBATCH --array=0-50%26
+# NOTE: cluster-specific, replace with your log directory
 #SBATCH --output=/leonardo_scratch/fast/IscrC_ARGO/results/SSCBM/slurm-gaparr-%A_%a.out
 #SBATCH --error=/leonardo_scratch/fast/IscrC_ARGO/results/SSCBM/slurm-gaparr-%A_%a.err
 
 module load python
 module load cuda
+# NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
 # B1/B2 as a SLURM array (one row per task). The serial version needed ~10 min/row for celeba and
@@ -20,6 +23,7 @@ source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 # Each task writes its own JSON part file, so no two tasks race on a shared jsonl.
 # Task order: SSCBM-KNN DIS (0-23) -> ResNet18 CBM-frozen ECCE-R+DIS (24-26) -> self-train (27-50),
 # so the rows the tables need are computed first.
+# NOTE: cluster-specific path, replace with your own location
 cd /leonardo_scratch/fast/IscrC_ARGO/argobackup/argus
 export MPLBACKEND=agg
 export OMP_NUM_THREADS=8

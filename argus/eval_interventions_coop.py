@@ -38,6 +38,7 @@ Output: one JSON row -> rebuttal_drafts/D6_coop.jsonl
 """
 import sys, os, json, argparse, time
 
+# NOTE: cluster-specific path, replace with your own location
 sys.path.insert(0, '/leonardo_scratch/fast/IscrC_ARGO/argobackup')
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/CQA')
 
@@ -51,6 +52,7 @@ from eval_interventions import (CONCEPT_STRUCTURES, group_columns, build_gt_enco
                                 intervene, eval_preds)
 
 FAST = os.environ['FAST']
+# NOTE: cluster-specific path, replace with your own location
 OUT = '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts/D6_coop.jsonl'
 IDX = json.load(open('/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts/_gp_ckpt_index.json'))
 BB_ACT = {'clip': 'ViT-L/14', 'dinov3': 'dinov3'}

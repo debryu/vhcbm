@@ -189,6 +189,7 @@ elif ds_name == 'nih4':
 elif ds_name == 'dermamnist':
     n_concepts = 7
     BALANCED = False
+    # NOTE: cluster-specific path, replace with your own location
     kwargs = {'root':'/leonardo/home/userexternal/ndebole0/data/dermamnist'}
     concepts_path = os.path.join(FAST_STORAGE,"concepts/dermamnist")
     concept_structure = {   'finding':(0,6),

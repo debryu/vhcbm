@@ -18,6 +18,7 @@ Output: appends one JSON row to rebuttal_drafts/D1_interventions_baseline.jsonl
 """
 import sys, os, json, argparse
 
+# NOTE: cluster-specific path, replace with your own location
 sys.path.insert(0, '/leonardo_scratch/fast/IscrC_ARGO/argobackup')
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/CQA')
 
@@ -35,6 +36,7 @@ from eval_interventions import (FRACTIONS, N_RANDOM_REPS, CONCEPT_STRUCTURES,
 
 FAST = os.environ['FAST']
 ACT = os.path.join(FAST, 'activations')
+# NOTE: cluster-specific path, replace with your own location
 OUT = '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts/D1_interventions_baseline.jsonl'
 N = 340
 BACKBONE_ACT = {'clip': 'ViT-L/14', 'dinov3': 'dinov3', 'resnet18_cub': 'resnet18_cub'}

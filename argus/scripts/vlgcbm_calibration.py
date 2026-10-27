@@ -165,6 +165,7 @@ if __name__ == "__main__":
     #args.model_path = "celeba-220-randomc-RBF-868_2026_02_19_20_13_SEED=868.pt"
     #args.model_path = "cub-220-randomc-RBF-123_2026_02_21_19_34_SEED=123.pt"
     
+    # NOTE: cluster-specific path, replace with your own location
     args.model = os.path.join('/leonardo_scratch/fast/IscrC_ARGO/competitors/ICMLmodels', args.model_path)
     args.load_dir = os.path.join('/leonardo_scratch/fast/IscrC_ARGO/competitors/ICMLmodels', args.model_path)
     model = VLGCBM(args)

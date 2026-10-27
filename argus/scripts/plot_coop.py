@@ -19,6 +19,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
+# NOTE: cluster-specific path, replace with your own location
 HERE = os.environ.get('D6_OUTDIR', '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts')
 SRC = os.environ.get('D6_SRC', os.path.join(HERE, 'D6_coop.jsonl'))
 

@@ -240,10 +240,12 @@ def prepare_cbm(args, alpha):
 def train(args):
     ds = args.dataset.split('_')[0]
     logger.debug("Loading ARGO activations")
+    # NOTE: cluster-specific path, replace with your own location
     dataset_train = torch.load("/leonardo_scratch/fast/IscrC_ARGO/models/argo_train.pt", weights_only=False, map_location='cpu')
     dataset_val = torch.load("/leonardo_scratch/fast/IscrC_ARGO/models/argo_val.pt", weights_only=False, map_location='cpu')
     dataset_test = torch.load("/leonardo_scratch/fast/IscrC_ARGO/models/argo_test.pt", weights_only=False, map_location='cpu')
     
+    # NOTE: cluster-specific path, replace with your own location
     experiments_folder = "/leonardo_scratch/fast/IscrC_ARGO/results/GPs/GPs"
     K = 340
     #_, _, K, acq_fn, kernel, seedAndDate = args.argo_train.split("-")
