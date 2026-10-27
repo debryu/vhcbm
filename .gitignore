@@ -11,4 +11,10 @@ argus/annotated_datasets
 __pycache__/
 __pycache__
 *.py[cod]
-*$py.class
+*$py.class*.egg-info/
+argus/figsdino
+argus/data/*/
+!argus/data/concepts/
+CQA/wandb
+*.pt
+*.pth
