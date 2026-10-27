@@ -14,7 +14,7 @@ module load cuda
 # NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
-# E5 rebuttal (upgraded to P1): SSCBM-style pseudo-labeling over frozen embeddings.
+# SSCBM-style pseudo-labeling over frozen embeddings (Table 6).
 # 24 = 4 datasets x {ViT-L/14, dinov3} x seeds {132,213,312}.
 python - <<'END'
 import os, itertools, subprocess

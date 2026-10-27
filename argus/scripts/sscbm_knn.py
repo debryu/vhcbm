@@ -1,5 +1,5 @@
 """
-E5 rebuttal experiment: SSCBM-faithful semi-supervised CBM over frozen embeddings.
+SSCBM-style semi-supervised CBM over frozen embeddings (Table 6).
 
 Implements the pseudo-labeling of SSCBM (Hu et al., ICCV'25, Sec. 4.2) — which is also
 exactly their own "CBM+SSL" baseline (Table 2): each unlabeled sample receives a SOFT
@@ -9,7 +9,7 @@ normalized reciprocals of the cosine distances. The concept head is then trained
 GT (labeled subset) + soft KNN pseudo-labels (rest) with a soft-target weighted CE
 (MultiTaskTrainer hardens labels, models/linear.py:63-79, so we subclass it).
 
-Deliberate adaptations, to be stated in the rebuttal:
+Deliberate adaptations (described in the paper appendix):
 - SSCBM's alignment loss needs spatial HxW feature maps vs concept embeddings; our
   pipeline operates on pooled frozen embeddings, so it does not apply. The paper itself
   reports KNN-only pseudo-labeling "has satisfactory performance" and uses it for its

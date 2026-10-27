@@ -1,5 +1,5 @@
 """
-E1 rebuttal experiment: fair frozen-backbone CBM baseline.
+Frozen-backbone CBM baseline (Tables 4 and 5).
 
 Frozen VLM embeddings -> concept head (MultiTaskTrainer, trained on N fully-annotated
 samples, N in the same budget grid as scripts/lp.py) -> sequential linear task layer

@@ -47,7 +47,7 @@ SAVE_FOLDER = os.path.join(SCRATCH_STORAGE,"models")
 KERNEL = os.environ.get("KERNEL", "RBF")     # [poly, RBF, lin, cos, sum (cos and RBF), learnable(Linear Combination of cos and RBF), nn ]
 SEED = int(os.environ.get("SEED", 42))
 MODEL_NAME = os.environ.get('VLM', 'ViT-L/14')
-# Kernel hyperparameter overrides (rebuttal sensitivity sweep); defaults match the original values
+# Kernel hyperparameter overrides (sensitivity sweep, Table 3); defaults match the original values
 LENGTHSCALE = float(os.environ.get("LENGTHSCALE", 1.41))
 OUTPUTSCALE = float(os.environ.get("OUTPUTSCALE", 1.0))
 LEARN_KERNEL = os.environ.get("LEARN_KERNEL", "1") == "1"
@@ -65,7 +65,7 @@ variation_list = ['']
 # NOTE: kept separate from variation_list, whose entries are treated as augmentations to load.
 savename_variation_list = variation_list
 if any(k in os.environ for k in ("LENGTHSCALE", "OUTPUTSCALE", "LEARN_KERNEL")):
-    # get_savename does not encode the backbone (known caveat, cf. the E1-sym resnet runs), so a
+    # get_savename does not encode the backbone (known caveat), so a
     # non-CLIP sweep would collide with the CLIP JSONs of the same config — tag it explicitly.
     _bb_tag = "" if MODEL_NAME == 'ViT-L/14' else "_" + MODEL_NAME.replace('/', '%')
     savename_variation_list = variation_list + [f"LS{LENGTHSCALE}_OS{OUTPUTSCALE}_LK{int(LEARN_KERNEL)}{_bb_tag}"]

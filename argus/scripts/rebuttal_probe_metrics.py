@@ -1,4 +1,4 @@
-"""Fill the remaining probe-path metric gaps for the rebuttal tables.
+"""Compute the remaining probe-path metrics for the comparison tables (Tables 4-6).
 
 Two jobs, both inference-only on already-saved artifacts (no retraining):
 
@@ -7,8 +7,8 @@ Two jobs, both inference-only on already-saved artifacts (no retraining):
   B2  CBM-frozen ResNet18, cub @N=340: ECCE-R *and* DIS.
       Its metrics.txt only carries confidence-ECE (metrics/ece.py), a different quantity.
 
-Protocol is copied verbatim from $FAST/results/FAIRCBM_metrics_work/faircbm_compute_metrics.py
-(the script that produced the published FairCBM clip/dinov3 numbers) so the new rows are
+Protocol is copied verbatim from scripts/faircbm_compute_metrics.py
+(the script that produced the frozen-backbone CBM clip/dinov3 numbers) so the new rows are
 comparable to the existing ones:
   - ECCE-R = mean over concept-class columns of _cumulative(...)[0]  (kuiper), flat column average
   - DIS    = DCI_wrapper on (test concept probs -> GT concepts), train_test_ratio=0.7
@@ -141,8 +141,8 @@ def build_joblist():
             base = os.path.basename(run)
             jobs.append(('sscbm-selftrain', backbone, base.split('-')[0],
                          int(base.split('SEED=')[1]), run, False, True))
-    # Jul 30: SSCBM on resnet18_cub (cub only) — fills the DIS cells of the E1-symmetric ResNet18
-    # table. APPENDED LAST ON PURPOSE: task indices are positional, so inserting these earlier
+    # SSCBM on resnet18_cub (cub only).
+    # APPENDED LAST ON PURPOSE: task indices are positional, so inserting these earlier
     # would renumber the existing 51 rows and invalidate the array indices in the slurm file.
     for tag, model in [('knn', 'sscbm-knn'), ('pseudo', 'sscbm-selftrain')]:
         for run in sorted(glob.glob(f'{FAST}/results/SSCBM/resnet18_cub/*-{N}-{tag}-*')):

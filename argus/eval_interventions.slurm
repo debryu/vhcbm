@@ -14,10 +14,8 @@ module load cuda
 # NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
-# Jul 29 coverage fill: rerun with the FIXED group_scores_ucp (float64/eps=1e-12 — the old
-# float32/eps=1e-8 version NaN-poisoned ucp) on all 24 clip+dino runs, plus the 3 resnet18 runs
-# that never had interventions. Old outputs preserved as interventions.json.pre_ucp_fix;
-# gpstd/random entries must match them exactly (they never touch the entropy path).
+# Test-time interventions (Table 9) on all clip+dino VH-CBM runs plus the 3 resnet18 runs.
+# group_scores_ucp uses float64 with eps=1e-12 to avoid NaNs in the entropy ordering.
 python - <<'END'
 import os, subprocess
 

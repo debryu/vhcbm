@@ -16,8 +16,7 @@ module load cuda
 # NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
-# E1-symmetric: task head + eval for the VH-CBM ResNet18 GPs (cub, K=510, seeds 132/213/312).
-# Completes the ResNet18 row (F1(Y)) vs FairCBM-ResNet18 and the paper's CBM-ResNet18.
+# Task head + eval for the VH-CBM ResNet18 GPs (cub, K=510, seeds 132/213/312; Table 5).
 # NOTE: cluster-specific path, replace with your own location
 cd /leonardo_scratch/fast/IscrC_ARGO/argobackup/argus
 python - <<'END'

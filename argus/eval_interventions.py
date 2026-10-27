@@ -1,5 +1,5 @@
 """
-E3 rebuttal experiment: test-time concept interventions on trained VH-CBM runs.
+Test-time concept interventions on trained VH-CBM runs (Table 9).
 
 Procedure follows Shin et al., "A Closer Look at the Intervention Procedure of
 Concept Bottleneck Models" (ICML 2023): our task layer is trained SEQuentially on

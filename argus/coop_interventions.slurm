@@ -18,7 +18,7 @@ source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 cd /leonardo_scratch/fast/IscrC_ARGO/argobackup/argus
 export MPLBACKEND=agg
 
-# D6: ICBM CooP policy vs GP-uncertainty ordering, CUB + CelebA, CLIP, 3 seeds, both models.
+# ICBM CooP policy vs GP-uncertainty ordering (Table 9), CUB + CelebA, CLIP, 3 seeds, both models.
 # task id -> (model, dataset, seed);  0-5 = VH-CBM, 6-11 = CBM-fair
 i=$SLURM_ARRAY_TASK_ID
 MODELS=(vh fair)

@@ -1,10 +1,8 @@
-"""D6 — test-time intervention curves under the ICBM (Chauhan et al., AAAI 2023) CooP policy.
+"""Test-time intervention curves under the ICBM (Chauhan et al., AAAI 2023) CooP policy (Table 9).
 
-Why: reviewer Vvro asked for a comparison against Interactive CBMs. Our reply currently asserts
-that VH-CBM "reduces the need for human intervention" without evidence, and positions ICBM as
-orthogonal. It is not orthogonal at the point that matters: ICBM's contribution is a *policy* for
-choosing which concept to query next, and our GP hands us predictive uncertainty which is exactly
-such a policy. So we run their policy and ours on the same models and plot query-efficiency.
+ICBM's contribution is a *policy* for choosing which concept to query next, and the GP of VH-CBM
+provides predictive uncertainty, which is such a policy. We run their policy and ours on the same
+models and compare query-efficiency.
 
 CooP (their Algorithm 2):      score_i = a*CPU(c_i) + b*CIS(c_i) - g*q_i
   CPU  concept prediction uncertainty = entropy of p(c_i | x)          [= our existing `ucp`]
@@ -62,7 +60,7 @@ N_FAIR = 340
 # budget grids: fine near 0 where the query-efficiency argument lives
 KGRID = {'cub':    [0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 28, 32, 48, 56, 64, 84, 112],
          'celeba': [0, 1, 2, 3, 4, 6, 8, 10, 12, 16, 20, 24, 28, 29, 32, 36, 39],
-         'shapes3d': [0, 1, 2, 3, 4, 5]}   # G=5 -> full grid (Jul 29 coverage fill)
+         'shapes3d': [0, 1, 2, 3, 4, 5]}   # G=5 -> full grid
 ALPHAS = [0.0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 1.0]   # b = 1 - a; only the ratio matters
 
 

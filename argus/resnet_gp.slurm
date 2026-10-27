@@ -14,8 +14,8 @@ module load cuda
 # NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
-# E1 symmetric argument: VH-CBM GP concept layer over frozen ResNet18 features (cub only).
-# Completes the triple: VH-CBM-ResNet18 vs FairCBM-ResNet18 (done) vs paper's CBM-ResNet18.
+# VH-CBM GP concept layer over frozen ResNet18 features (cub only, Table 5).
+# Compared with the frozen-backbone CBM and the end-to-end CBM on the same ResNet18.
 python - <<'END'
 import os, subprocess, datetime
 

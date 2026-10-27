@@ -14,7 +14,7 @@ module load cuda
 # NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
-# E1 rebuttal: fair frozen-backbone CBM (probe @ budget -> sequential task layer).
+# Frozen-backbone CBM (probe @ budget -> sequential task layer; Tables 4 and 5).
 # 24 = 4 datasets x {ViT-L/14, dinov3} x seeds {132,213,312}; +3 = cub x resnet18_cub x seeds.
 python - <<'END'
 import os, itertools, subprocess

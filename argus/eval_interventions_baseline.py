@@ -1,9 +1,8 @@
-"""D1b - concept interventions on the CBM-frozen baseline, under the IDENTICAL protocol used for
+"""Concept interventions on the frozen-backbone CBM baseline (Table 9), under the IDENTICAL protocol used for
 VH-CBM in eval_interventions.py.
 
-Why this exists: reporting intervention curves only for our own model invites the objection
-"the baseline would improve just as much" (or "you picked the encoding that flatters you").
-This runs the same interventions on the frozen-probe CBM so the comparison is like-for-like.
+This runs the same interventions on the frozen-probe CBM so the comparison with VH-CBM is
+like-for-like.
 
 Everything is inference on artifacts that already exist in each FAIRCBM run dir
 (probe.pth + W_g.pt + b_g.pt) - no retraining.

@@ -16,7 +16,7 @@ module load cuda
 # NOTE: cluster-specific, replace with your Python environment
 source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
-# E5 calibration: ECCE-R (paper's ECCE), ECCE-MAD, ECE for the 48 SSCBM N=340 runs.
+# SSCBM calibration (Table 6): ECCE-R (paper's ECCE), ECCE-MAD, ECE for the SSCBM N=340 runs.
 # Appends per run to rebuttal_drafts/sscbm_calibration_N340.jsonl and skips completed runs,
 # so it is safe to resubmit.
 # NOTE: cluster-specific path, replace with your own location

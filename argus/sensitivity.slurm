@@ -16,7 +16,7 @@ source /leonardo/home/userexternal/ndebole0/projects/vlm/bin/activate
 
 mkdir -p $SCRATCH/results/GPs/GPs $SCRATCH/models
 
-# E2 rebuttal sweep: GP kernel hyperparameter sensitivity (lengthscale/outputscale),
+# GP kernel hyperparameter sensitivity (lengthscale/outputscale initialisation, Table 3),
 # learned vs frozen, on dermamnist + shapes3d, CLIP backbone, activeours acquisition.
 python - <<'END'
 import os, itertools, subprocess, datetime

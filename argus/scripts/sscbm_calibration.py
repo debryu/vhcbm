@@ -30,8 +30,7 @@ ACT = os.path.join(FAST, 'activations')
 OUT = '/leonardo_scratch/fast/IscrC_ARGO/argobackup/argus/rebuttal_drafts/sscbm_calibration_N340.jsonl'
 os.makedirs('./figs/ece', exist_ok=True)   # _cumulative/_equiprob write plots there
 
-# Jul 30: resnet18_cub added (cub only) so the E1-symmetric ResNet18 table gets a real ECCE-R for
-# its SSCBM rows instead of `--`. Same normalisation contract as rebuttal_probe_metrics.py:
+# resnet18_cub is included (cub only). Same normalisation contract as rebuttal_probe_metrics.py:
 # standardise always, extra L2 for dinov3 only.
 VLM = {'clip': 'ViT-L/14', 'dinov3': 'dinov3', 'resnet18_cub': 'resnet18_cub'}
 

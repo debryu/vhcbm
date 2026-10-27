@@ -1,12 +1,11 @@
-"""D6 figure + table: query-efficiency of intervention policies (ICBM CooP vs GP uncertainty).
+"""Figure + table: query-efficiency of intervention policies (ICBM CooP vs GP uncertainty, Table 9).
 
 Reads rebuttal_drafts/D6_coop.jsonl (written by eval_interventions_coop.py) and produces
   rebuttal_drafts/D6_intervention_curves.pdf / .png   two panels, CUB and CelebA
   rebuttal_drafts/D6_coop_table.md                    the numbers behind the figure
 
-Encoding (per the dataviz method):
-  colour  = POLICY   (categorical slots 1-3 of the reference palette, fixed order, all-pairs
-                      validated in both modes: CVD dE 9.2 / normal-vision 24.0)
+Encoding:
+  colour  = POLICY   (colorblind-safe categorical palette, fixed order)
   line    = MODEL    (VH-CBM solid, CBM-fair dashed)
 so series identity never rests on colour alone. One y-axis per panel; the two panels are small
 multiples of the same measure, not a dual axis.
@@ -140,8 +139,7 @@ def main():
                 continue
             k, m, sd, n = curves[key]
             table.append(f'| {LABEL[key]} | ' + ' | '.join(f'{v:.3f}' for v in m) + ' |')
-        # the two CooP components, reported for completeness and because `ucp` is the corrected
-        # version of a curve already published in D1 (the float32 NaN bug)
+        # the two CooP components, reported for completeness
         for model in ('vh', 'fair'):
             for pol, nm in (('ucp', 'CPU / predictive entropy'), ('cis', 'CIS / concept importance'),
                             ('coop_oneshot', 'CooP, NON-adaptive one-shot (what our earlier bug measured)')):
