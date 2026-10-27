@@ -4,6 +4,7 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "2")
 os.environ.setdefault("MKL_NUM_THREADS", "2")
 
 import sys, json, time
+# NOTE: cluster-specific path, replace with your own location
 sys.path.insert(0, '/leonardo_scratch/fast/IscrC_ARGO/argobackup')
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/CQA')
 
@@ -15,6 +16,7 @@ DATASETS = ['shapes3d', 'dermamnist', 'celeba', 'cub']
 BACKBONES = ['clip', 'dinov3']
 SEEDS = [132, 213, 312]
 
+# NOTE: cluster-specific path, replace with your own location
 OUT_PATH = "/leonardo_scratch/fast/IscrC_ARGO/results/FAIRCBM_metrics_work/faircbm_metrics_N340.jsonl"
 
 

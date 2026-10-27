@@ -1,4 +1,5 @@
 import sys, os, json, time
+# NOTE: cluster-specific path, replace with your own location
 sys.path.insert(0, '/leonardo_scratch/fast/IscrC_ARGO/argobackup')
 sys.path.insert(0, '/leonardo/home/userexternal/ndebole0/projects/CQA')
 
@@ -38,6 +39,7 @@ def collect_concepts(dataset):
 
 def compute_ecer(test_probs, concept_gts, tag):
     kuipers = []
+    # NOTE: cluster-specific path, replace with your own location
     tmp_plot = f"/leonardo_scratch/fast/IscrC_ARGO/results/FAIRCBM_metrics_work/_ecce_tmp_{tag}.pdf"
     for i in range(test_probs.shape[1]):
         probs_i = test_probs[:, i].detach().clone().cpu()
